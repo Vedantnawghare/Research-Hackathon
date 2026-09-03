@@ -78,13 +78,13 @@ export const RecordVitalsPage: React.FC = () => {
     }
   }, [patient?.id]);
 
-  const handleVoiceParsed = (parsed: ParsedVitals, transcriptText: string) => {
+  const handleVoiceParsed = async (parsed: ParsedVitals, transcriptText: string) => {
     const isSystemPrompt =
       transcriptText.toLowerCase().includes('listening...') ||
       transcriptText.toLowerCase().includes('speak vitals');
 
-    setForm((prev) => ({
-      ...prev,
+    const updatedForm = {
+      ...form,
       ...(parsed.heartRate !== undefined ? { heartRate: parsed.heartRate } : {}),
       ...(parsed.systolic !== undefined ? { systolic: parsed.systolic } : {}),
       ...(parsed.diastolic !== undefined ? { diastolic: parsed.diastolic } : {}),
@@ -96,7 +96,30 @@ export const RecordVitalsPage: React.FC = () => {
       ...(!isSystemPrompt && transcriptText.trim()
         ? { notes: `Voice Dictated Observation: "${transcriptText.trim()}"` }
         : {}),
-    }));
+    };
+
+    setForm(updatedForm);
+
+    // Instant Sync: Commit to Backend DB & Doctor Dashboard
+    if (patient && (parsed.heartRate || parsed.systolic || parsed.spo2)) {
+      try {
+        await addVitalRecord(patient.id, {
+          heartRate: updatedForm.heartRate,
+          systolic: updatedForm.systolic,
+          diastolic: updatedForm.diastolic,
+          temperature: updatedForm.temperature,
+          respiratoryRate: updatedForm.respiratoryRate,
+          spo2: updatedForm.spo2,
+          glucose: updatedForm.glucose,
+          urineOutput: updatedForm.urineOutput,
+          notes: updatedForm.notes
+        });
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3500);
+      } catch (err) {
+        console.error('Failed to auto-sync voice vitals:', err);
+      }
+    }
   };
 
   /* =========================================================
