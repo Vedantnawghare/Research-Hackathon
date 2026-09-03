@@ -57,7 +57,6 @@ def create_patient(
         ward=patient.ward,
         bed_number=patient.bed_number,
         assigned_doctor_id=patient.assigned_doctor_id,
-        primary_diagnosis=patient.primary_diagnosis,
     )
 
     db.add(new_patient)

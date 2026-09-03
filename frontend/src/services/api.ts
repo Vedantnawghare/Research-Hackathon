@@ -65,8 +65,6 @@ interface BackendPatient {
 
   current_status: PatientStatus;
 
-  primary_diagnosis?: string | null;
-
   is_active: boolean;
 
   created_at: string;
@@ -313,7 +311,7 @@ function mapPatientFromBackend(
 
     status: patient.current_status,
 
-    primaryDiagnosis: patient.primary_diagnosis || 'Not specified',
+    primaryDiagnosis: 'Not specified',
 
     admissionDate: patient.admission_date,
 
@@ -925,7 +923,6 @@ class ApiService {
       bed?: string;
       assignedDoctorId?: number | null;
       currentStatus?: PatientStatus;
-      primaryDiagnosis?: string;
     }
   ): Promise<Patient> {
     const numericId =
@@ -978,14 +975,6 @@ class ApiService {
     ) {
       payload.assigned_doctor_id =
         data.assignedDoctorId;
-    }
-
-    if (
-      data.primaryDiagnosis !==
-      undefined
-    ) {
-      payload.primary_diagnosis =
-        data.primaryDiagnosis;
     }
 
     if (

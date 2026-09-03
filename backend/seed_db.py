@@ -103,7 +103,6 @@ def seed_database():
             bed_number="ICU-01",
             assigned_doctor_id=doc1.id,
             current_status=PatientStatus.CRITICAL,
-            primary_diagnosis="Acute Respiratory Distress Syndrome (ARDS) & Sepsis",
             admission_date=datetime.utcnow() - timedelta(days=2),
             is_active=True,
         )
@@ -118,7 +117,6 @@ def seed_database():
             bed_number="ICU-02",
             assigned_doctor_id=doc1.id,
             current_status=PatientStatus.CRITICAL,
-            primary_diagnosis="Post-CABG Surgeries / Hemodynamic Instability",
             admission_date=datetime.utcnow() - timedelta(days=1),
             is_active=True,
         )
@@ -133,7 +131,6 @@ def seed_database():
             bed_number="ICU-03",
             assigned_doctor_id=doc2.id,
             current_status=PatientStatus.HIGH_RISK,
-            primary_diagnosis="Septic Shock & Acute Kidney Injury",
             admission_date=datetime.utcnow() - timedelta(days=1),
             is_active=True,
         )
@@ -148,7 +145,6 @@ def seed_database():
             bed_number="ICU-04",
             assigned_doctor_id=None,  # Unassigned intentionally to test alert!
             current_status=PatientStatus.CRITICAL,
-            primary_diagnosis="Severe Acute Asthma Exacerbation",
             admission_date=datetime.utcnow() - timedelta(hours=6),
             is_active=True,
         )
@@ -163,7 +159,6 @@ def seed_database():
             bed_number="ICU-05",
             assigned_doctor_id=doc1.id,
             current_status=PatientStatus.STABLE,
-            primary_diagnosis="Congestive Heart Failure Exacerbation",
             admission_date=datetime.utcnow() - timedelta(hours=12),
             is_active=True,
         )

@@ -22,14 +22,10 @@ import {
   RefreshCw,
   ChevronRight,
   CheckCircle2,
-  Edit3,
-  FileText,
-  Check,
 } from 'lucide-react';
 
 export const DoctorDashboard: React.FC = () => {
   const {
-    role,
     patients,
     alerts,
     tasks,
@@ -38,7 +34,6 @@ export const DoctorDashboard: React.FC = () => {
     navigateToRecordVitals,
     acknowledgeAlert,
     refreshData,
-    updatePatientDiagnosis,
   } = useApp();
 
   const [refreshing, setRefreshing] =
@@ -48,42 +43,6 @@ export const DoctorDashboard: React.FC = () => {
     useState<string>(
       patients[0]?.id || ''
     );
-
-  const [editingPatientId, setEditingPatientId] =
-    useState<string | null>(null);
-
-  const [editDiagnosisText, setEditDiagnosisText] =
-    useState<string>('');
-
-  const [savingDiagnosis, setSavingDiagnosis] =
-    useState<boolean>(false);
-
-  const handleStartEditDiagnosis = (patient: any) => {
-    setEditingPatientId(patient.id);
-    setEditDiagnosisText(patient.primaryDiagnosis || '');
-  };
-
-  const handleSaveDiagnosis = async (patientId: string) => {
-    if (!editDiagnosisText.trim()) return;
-
-    try {
-      setSavingDiagnosis(true);
-
-      await updatePatientDiagnosis(
-        patientId,
-        editDiagnosisText.trim()
-      );
-
-      setEditingPatientId(null);
-    } catch (error) {
-      console.error(
-        'Failed to update diagnosis:',
-        error
-      );
-    } finally {
-      setSavingDiagnosis(false);
-    }
-  };
 
   /*
    * =========================================================
@@ -376,67 +335,10 @@ export const DoctorDashboard: React.FC = () => {
               {patient.gender}
             </p>
 
-            <div className="mt-2.5 bg-slate-100/90 rounded-lg p-2 border border-slate-200/80">
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                  <FileText className="w-3 h-3 text-cyan-600" />
-                  Primary Diagnosis
-                </span>
-
-                {role === 'DOCTOR' && editingPatientId !== patient.id && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStartEditDiagnosis(patient);
-                    }}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-100 hover:bg-cyan-200 text-cyan-800 text-[10px] font-extrabold transition-colors"
-                  >
-                    <Edit3 className="w-3 h-3" />
-                    Edit Diagnosis
-                  </button>
-                )}
-              </div>
-
-              {editingPatientId === patient.id ? (
-                <div className="space-y-1.5 mt-1" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="text"
-                    value={editDiagnosisText}
-                    onChange={(e) => setEditDiagnosisText(e.target.value)}
-                    placeholder="Enter clinical diagnosis..."
-                    className="w-full px-2.5 py-1 bg-white border border-cyan-500 rounded-md text-xs font-semibold text-slate-900 focus:outline-none focus:ring-1 focus:ring-cyan-500 shadow-inner"
-                    autoFocus
-                  />
-                  <div className="flex items-center justify-end gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setEditingPatientId(null)}
-                      className="px-2.5 py-1 rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] font-bold"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      disabled={savingDiagnosis}
-                      onClick={() => handleSaveDiagnosis(patient.id)}
-                      className="px-3 py-1 rounded-md bg-cyan-700 hover:bg-cyan-800 text-white text-[10px] font-bold flex items-center gap-1 shadow-xs disabled:opacity-50"
-                    >
-                      {savingDiagnosis ? (
-                        <RefreshCw className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <Check className="w-3 h-3" />
-                      )}
-                      Save Diagnosis
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs font-bold text-slate-800">
-                  {patient.primaryDiagnosis || 'Clinical diagnosis not recorded'}
-                </p>
-              )}
-            </div>
+            <p className="text-[11px] font-medium text-slate-600 mt-1 truncate max-w-[260px]">
+              {patient.primaryDiagnosis ||
+                'Clinical diagnosis not recorded'}
+            </p>
           </div>
         </div>
 

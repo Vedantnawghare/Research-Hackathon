@@ -120,11 +120,6 @@ interface AppContextType {
   loading: boolean;
 
   refreshData: () => Promise<void>;
-
-  updatePatientDiagnosis: (
-    patientId: string,
-    primaryDiagnosis: string
-  ) => Promise<void>;
 }
 
 /* =========================================================
@@ -630,41 +625,6 @@ export const AppProvider: React.FC<{
     };
 
   /* =======================================================
-     UPDATE PATIENT DIAGNOSIS (DOCTORS ONLY)
-  ======================================================= */
-
-  const updatePatientDiagnosis = async (
-    patientId: string,
-    primaryDiagnosis: string
-  ): Promise<void> => {
-    try {
-      const targetPatient = patients.find(p => p.id === patientId);
-
-      setPatients(prevPatients =>
-        prevPatients.map(p =>
-          p.id === patientId ? { ...p, primaryDiagnosis } : p
-        )
-      );
-
-      try {
-        await apiService.updatePatient(patientId, { primaryDiagnosis });
-      } catch (err) {
-        console.warn('Backend updatePatient error, maintained optimistic state update:', err);
-      }
-
-      addAuditLog(
-        'DIAGNOSIS_UPDATED',
-        `Doctor updated primary diagnosis to: ${primaryDiagnosis}`,
-        patientId,
-        targetPatient?.name
-      );
-    } catch (error) {
-      console.error('Failed to update patient diagnosis:', error);
-      throw error;
-    }
-  };
-
-  /* =======================================================
      RECORD VITALS
   ======================================================= */
 
@@ -1005,8 +965,6 @@ export const AppProvider: React.FC<{
         loading,
 
         refreshData,
-
-        updatePatientDiagnosis,
       }}
     >
       {children}

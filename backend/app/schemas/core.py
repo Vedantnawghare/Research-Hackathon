@@ -81,7 +81,6 @@ class PatientCreate(BaseModel):
     bed_number: str
 
     assigned_doctor_id: Optional[int] = None
-    primary_diagnosis: Optional[str] = None
 
 
 class PatientUpdate(BaseModel):
@@ -95,7 +94,6 @@ class PatientUpdate(BaseModel):
 
     assigned_doctor_id: Optional[int] = None
     current_status: Optional[PatientStatus] = None
-    primary_diagnosis: Optional[str] = None
 
 
 class PatientResponse(BaseModel):
@@ -115,7 +113,6 @@ class PatientResponse(BaseModel):
     assigned_doctor_id: Optional[int] = None
 
     current_status: PatientStatus
-    primary_diagnosis: Optional[str] = None
 
     is_active: bool
 

@@ -23,8 +23,6 @@ import {
   ArrowLeft,
   RefreshCw,
   Trash2,
-  Edit3,
-  Check,
 } from 'lucide-react';
 
 import {
@@ -45,19 +43,13 @@ type TabKey =
 export const PatientProfilePage: React.FC = () => {
 
   const {
-    role,
     patients,
     selectedPatientId,
     setActivePage,
     navigateToRecordVitals,
     alerts,
     acknowledgeAlert,
-    updatePatientDiagnosis,
   } = useApp();
-
-  const [isEditingDiagnosis, setIsEditingDiagnosis] = useState(false);
-  const [diagnosisInputValue, setDiagnosisInputValue] = useState('');
-  const [savingDiagnosis, setSavingDiagnosis] = useState(false);
 
 
   const [
@@ -423,70 +415,27 @@ export const PatientProfilePage: React.FC = () => {
 
         <div className="mt-4 flex items-center justify-between border-t border-slate-800/80 pt-4 text-xs text-slate-300">
 
-          <div className="w-full">
-            <div className="flex items-center justify-between gap-2">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Primary Diagnosis
-              </span>
+          <div>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Primary Diagnosis
+            </span>
 
-              {role === 'DOCTOR' && !isEditingDiagnosis && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDiagnosisInputValue(patient.primaryDiagnosis || '');
-                    setIsEditingDiagnosis(true);
-                  }}
-                  className="flex items-center gap-1 rounded bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-cyan-300 hover:bg-slate-700 transition-colors"
-                >
-                  <Edit3 className="h-3 w-3" />
-                  Edit Diagnosis
-                </button>
-              )}
-            </div>
+            <span className="text-sm font-bold text-white">
+              {patient.primaryDiagnosis}
+            </span>
+          </div>
 
-            {isEditingDiagnosis ? (
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="text"
-                  value={diagnosisInputValue}
-                  onChange={(e) => setDiagnosisInputValue(e.target.value)}
-                  placeholder="Enter clinical diagnosis..."
-                  className="w-full rounded-lg border border-cyan-500 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  disabled={savingDiagnosis}
-                  onClick={async () => {
-                    if (!diagnosisInputValue.trim()) return;
-                    try {
-                      setSavingDiagnosis(true);
-                      await updatePatientDiagnosis(patient.id, diagnosisInputValue.trim());
-                      setIsEditingDiagnosis(false);
-                    } catch (err) {
-                      console.error('Failed to save diagnosis:', err);
-                    } finally {
-                      setSavingDiagnosis(false);
-                    }
-                  }}
-                  className="flex items-center gap-1 rounded-lg bg-cyan-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-cyan-500 disabled:opacity-50"
-                >
-                  {savingDiagnosis ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingDiagnosis(false)}
-                  className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-slate-700"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <span className="text-sm font-bold text-white mt-1 block">
-                {patient.primaryDiagnosis || 'Clinical diagnosis not recorded'}
-              </span>
-            )}
+
+          <div className="text-right">
+
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Observation Cadence
+            </span>
+
+            <span className="font-bold text-cyan-300">
+              q15m Telemetry Waveform
+            </span>
+
           </div>
 
         </div>
