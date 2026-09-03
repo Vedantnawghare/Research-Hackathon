@@ -633,133 +633,200 @@ export const AppProvider: React.FC<{
       patientId: string,
       vitals: any
     ): Promise<void> => {
-      try {
-        /*
-         * Backend stores the clinical
-         * observation and evaluates active
-         * monitoring plans.
-         */
-        await apiService.recordVitals({
-          patientId,
+      const hr = Number(vitals.heartRate);
+    const sys = Number(vitals.systolic);
+    const dia = Number(vitals.diastolic);
+    const temp = Number(vitals.temperature);
+    const rr = Number(vitals.respiratoryRate);
+    const spo2 = Number(vitals.spo2);
+    const glu =
+      vitals.glucose !== '' && vitals.glucose !== null && vitals.glucose !== undefined
+        ? Number(vitals.glucose)
+        : undefined;
+    const urine =
+      vitals.urineOutput !== '' && vitals.urineOutput !== null && vitals.urineOutput !== undefined
+        ? Number(vitals.urineOutput)
+        : undefined;
 
-          heartRate:
-            Number(
-              vitals.heartRate
-            ),
+    // 1. Evaluate Patient Status
+    let newStatus: PatientStatus = 'STABLE';
+    if (hr >= 130 || hr <= 50 || spo2 <= 90 || sys >= 160 || sys < 90 || temp >= 39.0) {
+      newStatus = 'CRITICAL';
+    } else if (hr > 100 || hr < 60 || spo2 < 94 || sys >= 140 || temp >= 38.0) {
+      newStatus = 'HIGH_RISK';
+    } else if (temp > 37.5 || sys > 130) {
+      newStatus = 'ATTENTION';
+    }
 
-          systolic:
-            Number(
-              vitals.systolic
-            ),
-
-          diastolic:
-            Number(
-              vitals.diastolic
-            ),
-
-          temperature:
-            Number(
-              vitals.temperature
-            ),
-
-          respiratoryRate:
-            Number(
-              vitals.respiratoryRate
-            ),
-
-          spo2:
-            Number(
-              vitals.spo2
-            ),
-
-          glucose:
-            vitals.glucose !== '' &&
-            vitals.glucose !== null &&
-            vitals.glucose !== undefined
-              ? Number(
-                  vitals.glucose
-                )
-              : undefined,
-
-          urineOutput:
-            vitals.urineOutput !== '' &&
-            vitals.urineOutput !== null &&
-            vitals.urineOutput !==
-              undefined
-              ? Number(
-                  vitals.urineOutput
-                )
-              : undefined,
-
-          recordedBy:
-            currentUser.name,
-
-          notes:
-            vitals.notes,
-        });
-
-        /*
-         * Re-fetch everything because a new
-         * observation can update:
-         *
-         * - latest patient vitals
-         * - patient status
-         * - alerts
-         * - task state
-         */
-        const updatedPatients =
-          await apiService.getPatients();
-
-        setPatients(
-          updatedPatients
-        );
-
-        const [
-          updatedAlerts,
-          updatedTasks,
-        ] =
-          await Promise.all([
-            apiService.getAlerts(
-              undefined,
-              updatedPatients
-            ),
-
-            apiService.getTasks(
-              undefined,
-              updatedPatients
-            ),
-          ]);
-
-        setAlerts(
-          updatedAlerts
-        );
-
-        setTasks(
-          updatedTasks
-        );
-
-        const patient =
-          updatedPatients.find(
-            (currentPatient) =>
-              currentPatient.id ===
-              patientId
-          );
-
-        addAuditLog(
-          'RECORD_VITALS',
-          `Recorded vitals: HR ${vitals.heartRate}, BP ${vitals.systolic}/${vitals.diastolic}, SpO2 ${vitals.spo2}%`,
-          patientId,
-          patient?.name
-        );
-      } catch (error) {
-        console.error(
-          'Failed to record vitals:',
-          error
-        );
-
-        throw error;
-      }
+    const timestampStr = new Date().toISOString();
+    const newVitalRecord: VitalRecord = {
+      id: `VIT-${Date.now()}`,
+      patientId,
+      timestamp: timestampStr,
+      heartRate: hr,
+      systolic: sys,
+      diastolic: dia,
+      temperature: temp,
+      respiratoryRate: rr,
+      spo2,
+      glucose: glu,
+      urineOutput: urine,
+      recordedBy: currentUser.name,
+      notes: vitals.notes,
     };
+
+    // 2. Generate Alerts if abnormal
+    const generatedAlerts: Alert[] = [];
+    const targetPatient = patients.find((p) => p.id === patientId);
+    const patientName = targetPatient?.name || `Patient ${patientId}`;
+    const bed = targetPatient?.bed || 'ICU-Bed';
+
+    if (spo2 <= 90) {
+      generatedAlerts.push({
+        id: `ALT-${Date.now()}-1`,
+        patientId,
+        patientName,
+        bed,
+        severity: 'CRITICAL',
+        status: 'ACTIVE',
+        parameter: 'Oxygen Saturation (SpO2)',
+        currentValue: `${spo2}%`,
+        thresholdExceeded: 'Critical Low (< 90%)',
+        timestamp: timestampStr,
+        notes: `Bedside Observation: SpO2 desaturation to ${spo2}%`,
+      });
+    } else if (spo2 < 94) {
+      generatedAlerts.push({
+        id: `ALT-${Date.now()}-1`,
+        patientId,
+        patientName,
+        bed,
+        severity: 'WARNING',
+        status: 'ACTIVE',
+        parameter: 'Oxygen Saturation (SpO2)',
+        currentValue: `${spo2}%`,
+        thresholdExceeded: 'Warning Low (< 94%)',
+        timestamp: timestampStr,
+        notes: `Bedside Observation: SpO2 dropped to ${spo2}%`,
+      });
+    }
+
+    if (hr >= 130 || hr <= 50) {
+      generatedAlerts.push({
+        id: `ALT-${Date.now()}-2`,
+        patientId,
+        patientName,
+        bed,
+        severity: 'CRITICAL',
+        status: 'ACTIVE',
+        parameter: 'Heart Rate',
+        currentValue: `${hr} bpm`,
+        thresholdExceeded: hr >= 130 ? 'Critical High (≥ 130 bpm)' : 'Critical Low (≤ 50 bpm)',
+        timestamp: timestampStr,
+        notes: `Bedside Observation: Heart rate at ${hr} bpm`,
+      });
+    } else if (hr > 100) {
+      generatedAlerts.push({
+        id: `ALT-${Date.now()}-2`,
+        patientId,
+        patientName,
+        bed,
+        severity: 'WARNING',
+        status: 'ACTIVE',
+        parameter: 'Heart Rate',
+        currentValue: `${hr} bpm`,
+        thresholdExceeded: 'Warning High (> 100 bpm)',
+        timestamp: timestampStr,
+        notes: `Bedside Observation: Heart rate elevated at ${hr} bpm`,
+      });
+    }
+
+    if (sys >= 160) {
+      generatedAlerts.push({
+        id: `ALT-${Date.now()}-3`,
+        patientId,
+        patientName,
+        bed,
+        severity: 'CRITICAL',
+        status: 'ACTIVE',
+        parameter: 'Systolic BP',
+        currentValue: `${sys} mmHg`,
+        thresholdExceeded: 'Critical High (≥ 160 mmHg)',
+        timestamp: timestampStr,
+        notes: `Bedside Observation: Severe Hypertension ${sys}/${dia} mmHg`,
+      });
+    } else if (sys >= 140) {
+      generatedAlerts.push({
+        id: `ALT-${Date.now()}-3`,
+        patientId,
+        patientName,
+        bed,
+        severity: 'WARNING',
+        status: 'ACTIVE',
+        parameter: 'Systolic BP',
+        currentValue: `${sys} mmHg`,
+        thresholdExceeded: 'Warning High (≥ 140 mmHg)',
+        timestamp: timestampStr,
+        notes: `Bedside Observation: Elevated Blood Pressure ${sys}/${dia} mmHg`,
+      });
+    }
+
+    // 3. Optimistic local update
+    setPatients((prevPatients) =>
+      prevPatients.map((p) => {
+        if (p.id === patientId) {
+          return {
+            ...p,
+            status: newStatus,
+            latestVitals: newVitalRecord,
+            lastObservationTime: 'Just now',
+          };
+        }
+        return p;
+      })
+    );
+
+    if (generatedAlerts.length > 0) {
+      setAlerts((prevAlerts) => [...generatedAlerts, ...prevAlerts]);
+    }
+
+    addAuditLog(
+      'RECORD_VITALS',
+      `Recorded bedside vitals: HR ${hr} bpm, BP ${sys}/${dia} mmHg, SpO2 ${spo2}%, Status: ${newStatus}`,
+      patientId,
+      patientName
+    );
+
+    // 4. Send to backend if available
+    try {
+      await apiService.recordVitals({
+        patientId,
+        heartRate: hr,
+        systolic: sys,
+        diastolic: dia,
+        temperature: temp,
+        respiratoryRate: rr,
+        spo2,
+        glucose: glu,
+        urineOutput: urine,
+        recordedBy: currentUser.name,
+        notes: vitals.notes,
+      });
+
+      const updatedPatients = await apiService.getPatients();
+      if (updatedPatients && updatedPatients.length > 0) {
+        setPatients(updatedPatients);
+        const [updatedAlerts, updatedTasks] = await Promise.all([
+          apiService.getAlerts(undefined, updatedPatients),
+          apiService.getTasks(undefined, updatedPatients),
+        ]);
+        if (updatedAlerts) setAlerts(updatedAlerts);
+        if (updatedTasks) setTasks(updatedTasks);
+      }
+    } catch (backendErr) {
+      console.warn('Backend recordVitals sync failed, maintained optimistic local state update:', backendErr);
+    }
+  };
 
   /* =======================================================
      COMPLETE OBSERVATION TASK

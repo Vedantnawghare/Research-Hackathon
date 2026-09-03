@@ -79,6 +79,10 @@ export const RecordVitalsPage: React.FC = () => {
   }, [patient?.id]);
 
   const handleVoiceParsed = (parsed: ParsedVitals, transcriptText: string) => {
+    const isSystemPrompt =
+      transcriptText.toLowerCase().includes('listening...') ||
+      transcriptText.toLowerCase().includes('speak vitals');
+
     setForm((prev) => ({
       ...prev,
       ...(parsed.heartRate !== undefined ? { heartRate: parsed.heartRate } : {}),
@@ -89,7 +93,9 @@ export const RecordVitalsPage: React.FC = () => {
       ...(parsed.temperature !== undefined ? { temperature: parsed.temperature } : {}),
       ...(parsed.respiratoryRate !== undefined ? { respiratoryRate: parsed.respiratoryRate } : {}),
       ...(parsed.urineOutput !== undefined ? { urineOutput: parsed.urineOutput } : {}),
-      notes: `Voice Dictated Observation: "${transcriptText}"`
+      ...(!isSystemPrompt && transcriptText.trim()
+        ? { notes: `Voice Dictated Observation: "${transcriptText.trim()}"` }
+        : {}),
     }));
   };
 

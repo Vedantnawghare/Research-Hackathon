@@ -169,7 +169,7 @@ export const VoiceVitalsAssistant: React.FC<VoiceVitalsAssistantProps> = ({ onVi
       accumulatedTranscriptRef.current = '';
 
       setIsListening(true);
-      setTranscript('Listening... Speak vitals naturally (e.g. "Heart rate 95, SpO2 98, BP 120 over 80")');
+      setTranscript('');
 
       recognition.onresult = (event: any) => {
         let currentString = '';
